@@ -3,638 +3,529 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>1A2B :: C++ Game</title>
+<title>1A2B — 數字解謎對戰</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+TC:wght@300;400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:wght@300;400;600&display=swap');
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #e8ff47;
+    --accent2: #ff4747;
+    --text: #f0f0f0;
+    --muted: #666680;
+  }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-:root {
-  --bg:       #08080f;
-  --bg2:      #0d0d18;
-  --bg3:      #111120;
-  --border:   #1e1e38;
-  --border2:  #2a2a4a;
-  --cyan:     #00d4ff;
-  --cyan-dim: #0088aa;
-  --cyan-glow:rgba(0,212,255,0.18);
-  --green:    #00ff88;
-  --amber:    #ffaa00;
-  --red:      #ff4466;
-  --text:     #ccd6f6;
-  --muted:    #4a5080;
-  --mono:     'IBM Plex Mono', monospace;
-  --display:  'VT323', monospace;
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-html { scroll-behavior: smooth; }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(232,255,71,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,255,71,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 14px;
-  line-height: 1.6;
-  overflow-x: hidden;
-}
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    background: rgba(10,10,15,0.7);
+  }
 
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 3px,
-    rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
-  );
-  pointer-events: none;
-  z-index: 999;
-}
+  .nav-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+  }
+  .nav-logo span { color: var(--text); }
+  .nav-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--cyan-dim); border-radius: 2px; }
+  .hero {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 32px 80px;
+  }
 
-/* ─── HERO ─── */
-.hero {
-  min-height: 100vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 2rem;
-  text-align: center;
-  overflow: hidden;
-}
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid rgba(232,255,71,0.3);
+    background: rgba(232,255,71,0.05);
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    animation: fadeUp 0.8s ease both;
+  }
 
-.dot-grid {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, rgba(0,212,255,0.12) 1px, transparent 1px);
-  background-size: 36px 36px;
-  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
-  animation: gridShift 20s linear infinite;
-}
-@keyframes gridShift {
-  0%   { background-position: 0 0; }
-  100% { background-position: 36px 36px; }
-}
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease infinite;
+  }
 
-.corner { position: absolute; width: 60px; height: 60px; }
-.corner::before, .corner::after { content: ''; position: absolute; background: var(--cyan-dim); }
-.corner::before { width: 100%; height: 1px; }
-.corner::after  { width: 1px; height: 100%; }
-.corner.tl { top: 2rem; left: 2rem; }
-.corner.tr { top: 2rem; right: 2rem; transform: scaleX(-1); }
-.corner.bl { bottom: 2rem; left: 2rem; transform: scaleY(-1); }
-.corner.br { bottom: 2rem; right: 2rem; transform: scale(-1); }
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(5rem, 15vw, 11rem);
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+  .hero-title .a { color: var(--accent); }
+  .hero-title .b { color: var(--accent2); }
 
-.hero-eyebrow {
-  font-size: 0.7rem;
-  color: var(--cyan-dim);
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  margin-bottom: 1.5rem;
-  opacity: 0;
-  animation: fadeUp 0.5s 0.4s ease forwards;
-}
+  .hero-subtitle-block {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+  .hero-line { flex: 1; height: 1px; background: var(--border); max-width: 80px; }
+  .hero-subtitle {
+    font-size: 1rem;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+  }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+  .hero-desc {
+    max-width: 520px;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #aaaacc;
+    margin-bottom: 52px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
 
-.hero-title {
-  font-family: var(--display);
-  font-size: clamp(6rem, 20vw, 14rem);
-  color: var(--cyan);
-  line-height: 0.85;
-  letter-spacing: 0.06em;
-  text-shadow: 0 0 8px var(--cyan), 0 0 40px rgba(0,212,255,0.3), 0 0 100px rgba(0,212,255,0.1);
-  opacity: 0;
-  animation: fadeUp 0.7s 0.7s ease forwards;
-}
+  .hero-buttons {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
 
-.hero-rule {
-  width: 120px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
-  margin: 1.2rem auto;
-  opacity: 0;
-  animation: fadeUp 0.5s 1s ease forwards;
-}
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    border-radius: 4px;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-.hero-sub {
-  font-size: 0.75rem;
-  color: var(--muted);
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  opacity: 0;
-  animation: fadeUp 0.5s 1.1s ease forwards;
-}
+  .btn-primary {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: 2px solid var(--accent);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(232,255,71,0.35); }
 
-.hero-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-top: 2rem;
-  opacity: 0;
-  animation: fadeUp 0.5s 1.4s ease forwards;
-}
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--text); transform: translateY(-2px); background: rgba(255,255,255,0.04); }
 
-.badge {
-  font-size: 0.68rem;
-  padding: 0.25rem 0.75rem;
-  border: 1px solid var(--border2);
-  color: var(--muted);
-  letter-spacing: 0.1em;
-  border-radius: 2px;
-  background: var(--bg2);
-  transition: border-color 0.2s, color 0.2s;
-}
-.badge:hover { border-color: var(--cyan-dim); color: var(--cyan); }
+  .demo-wrap {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    padding: 0 32px 100px;
+  }
 
-.cursor-blink {
-  display: inline-block;
-  width: 3px;
-  height: 0.8em;
-  background: var(--cyan);
-  vertical-align: middle;
-  margin-left: 4px;
-  animation: blink 1s step-end infinite;
-  box-shadow: 0 0 8px var(--cyan);
-}
-@keyframes blink { 50% { opacity: 0; } }
+  .terminal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
 
-.scroll-cue {
-  position: absolute;
-  bottom: 2.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  opacity: 0;
-  animation: fadeUp 0.5s 2s forwards;
-}
-.scroll-line {
-  width: 1px; height: 40px;
-  background: linear-gradient(to bottom, var(--cyan-dim), transparent);
-  animation: scrollPulse 1.5s ease-in-out infinite;
-}
-@keyframes scrollPulse {
-  0%, 100% { opacity: 0.3; transform: scaleY(0.6); }
-  50%       { opacity: 1;   transform: scaleY(1); }
-}
-.scroll-cue span { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.15em; }
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px;
+    background: #16161f;
+    border-bottom: 1px solid var(--border);
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #ffbd2e; }
+  .dot-g { background: #28c841; }
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin: 0 auto;
+    letter-spacing: 0.05em;
+  }
 
-/* ─── LAYOUT ─── */
-.wrap { max-width: 900px; margin: 0 auto; padding: 0 2rem; }
-.section { padding: 5rem 0; }
+  .terminal-body {
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 2;
+  }
+  .t-prompt { color: var(--muted); }
+  .t-input  { color: var(--text); }
+  .t-result { color: var(--accent2); }
+  .t-win    { color: var(--accent); font-weight: 700; }
+  .t-comment{ color: #444466; }
+  .t-blink  { animation: blink 1s step-end infinite; }
 
-.sec-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.65rem;
-  color: var(--cyan-dim);
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  margin-bottom: 0.75rem;
-}
-.sec-eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .features {
+    position: relative;
+    z-index: 1;
+    padding: 60px 32px 100px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
 
-.sec-title {
-  font-family: var(--display);
-  font-size: clamp(2rem, 5vw, 3.2rem);
-  color: var(--text);
-  letter-spacing: 0.05em;
-  margin-bottom: 2.5rem;
-}
-.sec-title em { color: var(--cyan); font-style: normal; }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
 
-/* ─── TERMINAL ─── */
-.term {
-  background: #050510;
-  border: 1px solid var(--border2);
-  border-radius: 6px;
-  overflow: hidden;
-  box-shadow: 0 0 60px rgba(0,212,255,0.04), inset 0 0 60px rgba(0,0,0,0.4);
-}
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 64px;
+  }
 
-.term-bar {
-  background: var(--bg3);
-  border-bottom: 1px solid var(--border);
-  padding: 0.55rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-.dot { width: 10px; height: 10px; border-radius: 50%; }
-.dot-r { background: #ff5f57; }
-.dot-y { background: #febc2e; }
-.dot-g { background: #28c840; }
-.term-filename { margin-left: auto; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.08em; }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
 
-.term-body { padding: 1.25rem 1.5rem; font-size: 0.82rem; line-height: 2.1; }
-.t-comment { color: var(--muted); }
-.t-prompt  { color: var(--cyan-dim); }
-.t-prompt::before { content: '❯ '; color: var(--cyan); }
-.t-cmd     { color: #e0e0ff; }
-.t-out     { color: var(--text); padding-left: 1.2rem; }
-.t-a       { color: var(--green); padding-left: 1.2rem; font-weight: 600; }
-.t-b       { color: var(--amber); padding-left: 1.2rem; }
-.t-win     { color: var(--cyan);  padding-left: 1.2rem; text-shadow: 0 0 10px var(--cyan-glow); }
-.t-dim     { color: var(--muted); padding-left: 1.2rem; }
-.t-blank   { display: block; height: 0.6rem; }
+  .feature-card {
+    background: var(--bg);
+    padding: 40px 36px;
+    transition: background 0.2s;
+  }
+  .feature-card:hover { background: var(--surface); }
 
-/* ─── FEATURES ─── */
-.feat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-.feat {
-  background: var(--bg2);
-  padding: 1.75rem 1.5rem;
-  transition: background 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-.feat::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--cyan-dim), transparent);
-  opacity: 0;
-  transition: opacity 0.25s;
-}
-.feat:hover { background: var(--bg3); }
-.feat:hover::before { opacity: 1; }
-.feat-num { font-size: 0.62rem; color: var(--cyan-dim); letter-spacing: 0.2em; margin-bottom: 1rem; opacity: 0.7; }
-.feat-icon { font-family: var(--display); font-size: 2.4rem; line-height: 1; color: var(--cyan); text-shadow: 0 0 12px var(--cyan-glow); margin-bottom: 0.75rem; }
-.feat-name { font-size: 0.78rem; color: var(--text); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; font-weight: 600; }
-.feat-desc { font-size: 0.76rem; color: var(--muted); line-height: 1.8; }
-.feat-desc code { color: var(--cyan-dim); background: rgba(0,212,255,0.07); padding: 0 0.3em; border-radius: 2px; }
+  .feature-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    margin-bottom: 24px;
+  }
+  .feature-icon { font-size: 2rem; margin-bottom: 16px; display: block; }
+  .feature-name { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 10px; }
+  .feature-desc { font-size: 0.9rem; color: #888899; line-height: 1.7; }
 
-/* ─── MODES ─── */
-.modes-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
-}
-@media(max-width:600px) { .modes-grid { grid-template-columns: 1fr; } }
+  .howto {
+    position: relative;
+    z-index: 1;
+    padding: 60px 32px 100px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
 
-.mode-card {
-  border: 1px solid var(--border2);
-  border-radius: 6px;
-  padding: 1.75rem;
-  background: var(--bg2);
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s;
-}
-.mode-card:hover { border-color: var(--cyan-dim); }
-.mode-card.featured { border-color: var(--cyan-dim); }
-.mode-card.featured::after {
-  content: 'FEATURED';
-  position: absolute;
-  top: 1rem; right: -1.5rem;
-  font-size: 0.55rem;
-  background: var(--cyan-dim);
-  color: var(--bg);
-  padding: 0.2rem 2rem;
-  transform: rotate(45deg);
-  letter-spacing: 0.15em;
-}
-.mode-label { font-size: 0.62rem; color: var(--cyan-dim); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.5rem; }
-.mode-title { font-family: var(--display); font-size: 1.8rem; color: var(--text); margin-bottom: 0.75rem; letter-spacing: 0.05em; }
-.mode-desc  { font-size: 0.76rem; color: var(--muted); line-height: 1.8; }
+  .step {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 32px;
+    padding: 36px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+  .step:last-child { border-bottom: none; }
 
-/* ─── DIFFICULTY ─── */
-.diff-rows { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-.diff-row {
-  display: grid;
-  grid-template-columns: 100px 1fr auto;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1rem 1.5rem;
-  background: var(--bg2);
-  transition: background 0.15s;
-}
-.diff-row:hover { background: var(--bg3); }
-.diff-row.header { background: var(--bg3); padding: 0.5rem 1.5rem; }
-.diff-header-text { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
-.diff-name { font-family: var(--display); font-size: 1.4rem; letter-spacing: 0.05em; }
-.d-easy   { color: var(--green); }
-.d-normal { color: var(--cyan); }
-.d-hard   { color: var(--amber); }
-.diff-detail { font-size: 0.76rem; color: var(--muted); line-height: 1.7; }
-.diff-detail em { color: var(--text); font-style: normal; }
-.diff-pips { display: flex; gap: 4px; }
-.pip { width: 10px; height: 10px; border-radius: 50%; border: 1px solid currentColor; opacity: 0.25; }
-.pip.on { opacity: 1; background: currentColor; }
+  .step-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--border);
+    line-height: 1;
+  }
+  .step-content h3 { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+  .step-content p { font-size: 0.9rem; color: #888899; line-height: 1.7; }
 
-/* ─── SPEC ─── */
-.spec-table { width: 100%; border-collapse: collapse; }
-.spec-table tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
-.spec-table tr:last-child { border-bottom: none; }
-.spec-table tr:hover { background: var(--bg3); }
-.spec-table td { padding: 0.85rem 1rem; font-size: 0.8rem; vertical-align: top; }
-.spec-key { color: var(--muted); width: 160px; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
-.spec-val { color: var(--text); }
-.spec-val code { color: var(--cyan-dim); background: rgba(0,212,255,0.07); padding: 0.1em 0.4em; border-radius: 2px; font-size: 0.78rem; }
+  .step-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    margin-right: 6px;
+  }
+  .tag-a { background: rgba(255,71,71,0.15); color: var(--accent2); }
+  .tag-b { background: rgba(232,255,71,0.12); color: var(--accent); }
 
-/* ─── BUILD ─── */
-.build-steps { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1rem; }
-.build-step { display: flex; gap: 1.25rem; align-items: flex-start; }
-.build-num { font-family: var(--display); font-size: 1.4rem; color: var(--cyan-dim); min-width: 28px; line-height: 1.2; }
-.build-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.4rem; }
-.build-cmd { background: #050510; border: 1px solid var(--border2); border-radius: 4px; padding: 0.55rem 1rem; font-size: 0.82rem; color: var(--cyan); letter-spacing: 0.05em; font-family: var(--mono); }
-.build-cmd .flag    { color: var(--amber); }
-.build-cmd .comment { color: var(--muted); }
+  .cta-section {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 80px 32px;
+    border-top: 1px solid var(--border);
+    background: linear-gradient(to bottom, transparent, rgba(232,255,71,0.02));
+  }
+  .cta-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    margin-bottom: 16px;
+  }
+  .cta-title span { color: var(--accent); }
+  .cta-sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 40px; }
 
-.full-div { border: none; border-top: 1px solid var(--border); }
+  .footer-bottom {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
 
-/* ─── FOOTER ─── */
-footer { border-top: 1px solid var(--border); padding: 3rem 2rem; text-align: center; }
-.foot-logo { font-family: var(--display); font-size: 2.5rem; color: var(--cyan-dim); letter-spacing: 0.1em; text-shadow: 0 0 20px var(--cyan-glow); margin-bottom: 0.75rem; }
-.foot-meta { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.15em; line-height: 2; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @media (max-width: 600px) {
+    nav { padding: 16px 20px; }
+    .hero { padding: 100px 20px 60px; }
+    .step { grid-template-columns: 48px 1fr; gap: 16px; }
+    .btn { padding: 14px 24px; font-size: 0.85rem; }
+  }
 </style>
 </head>
 <body>
 
-<!-- HERO -->
+<nav>
+  <div class="nav-logo">1<span>A</span>2<span>B</span></div>
+  <div class="nav-tag">C++ 自製遊戲</div>
+</nav>
+
 <section class="hero">
-  <div class="dot-grid"></div>
-  <div class="corner tl"></div><div class="corner tr"></div>
-  <div class="corner bl"></div><div class="corner br"></div>
-
-  <div class="hero-eyebrow">C++ Personal Project &nbsp;·&nbsp; CLI Game</div>
-  <div class="hero-title">1A2B<span class="cursor-blink"></span></div>
-  <div class="hero-rule"></div>
-  <div class="hero-sub">Number Guessing Game &nbsp;·&nbsp; Terminal Edition</div>
-
-  <div class="hero-badges">
-    <span class="badge">C++17</span>
-    <span class="badge">CLI</span>
-    <span class="badge">3–10 位數自由選擇</span>
-    <span class="badge">人猜電腦 / 電腦猜人</span>
-    <span class="badge">難度系統</span>
-    <span class="badge">猜測歷史</span>
+  <div class="hero-badge">
+    <span class="badge-dot"></span>
+    C++ 原創開發 · 數字推理對戰
   </div>
 
-  <div class="scroll-cue">
-    <div class="scroll-line"></div>
-    <span>SCROLL</span>
+  <h1 class="hero-title">
+    <span class="a">1A</span><span class="b">2B</span>
+  </h1>
+
+  <div class="hero-subtitle-block">
+    <div class="hero-line"></div>
+    <p class="hero-subtitle">猜數字邏輯推理</p>
+    <div class="hero-line"></div>
+  </div>
+
+  <p class="hero-desc">
+    四位數字，無限可能。用邏輯推理破解對手密碼，
+    每一次猜測都是縮小範圍的藝術。
+    以 C++ 打造，輕量、快速、純粹。
+  </p>
+
+  <div class="hero-buttons">
+    <a href="#PLAY_URL" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      線上試玩
+    </a>
+    <a href="#DOWNLOAD_URL" class="btn btn-secondary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      立即下載
+    </a>
   </div>
 </section>
 
-<!-- DEMO TERMINAL -->
-<div class="wrap" style="padding-top:1rem; padding-bottom:1rem;">
-  <div class="term">
-    <div class="term-bar">
-      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
-      <div class="term-filename">1a2b — zsh — 80×24</div>
+<div class="demo-wrap">
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="terminal-title">1A2B Game — v1.0</div>
     </div>
-    <div class="term-body">
-      <span class="t-comment">// 啟動遊戲，選擇 5 位數、困難難度</span>
-      <span class="t-prompt"><span class="t-cmd">./1a2b</span></span>
-      <span class="t-out">歡迎來到 1A2B 猜數字遊戲</span>
-      <span class="t-out">請選擇位數 [3-10]：<span style="color:var(--cyan)">5</span></span>
-      <span class="t-out">請選擇難度 [easy/normal/hard]：<span style="color:var(--amber)">hard</span></span>
-      <span class="t-dim">電腦已產生 5 位不重複數字，請開始猜測</span>
-      <span class="t-blank"></span>
-      <span class="t-prompt"><span class="t-cmd">3 8 1 5 2</span></span>
-      <span class="t-b">→  1A  2B</span>
-      <span class="t-prompt"><span class="t-cmd">3 7 5 9 4</span></span>
-      <span class="t-a">→  2A  1B</span>
-      <span class="t-prompt"><span class="t-cmd">3 7 1 9 6</span></span>
-      <span class="t-win">→  5A  0B  ★  答對！共猜 3 次</span>
-      <span class="t-blank"></span>
-      <span class="t-dim">─── 猜測歷史 ─────────────────────</span>
-      <span class="t-dim">&nbsp;#1&nbsp; 3 8 1 5 2  →  1A 2B</span>
-      <span class="t-dim">&nbsp;#2&nbsp; 3 7 5 9 4  →  2A 1B</span>
-      <span class="t-dim">&nbsp;#3&nbsp; 3 7 1 9 6  →  5A 0B  ✓</span>
-      <span class="t-dim">──────────────────────────────────</span>
-      <span class="t-blank"></span>
-      <span class="t-prompt"><span class="t-cmd"><span class="cursor-blink"></span></span></span>
+    <div class="terminal-body">
+      <div><span class="t-comment">// 電腦設定了一組 4 位不重複數字</span></div>
+      <div><span class="t-prompt">系統 &gt; </span><span class="t-input">遊戲開始！請輸入第 1 次猜測：</span></div>
+      <div><span class="t-prompt">你   &gt; </span><span class="t-input">1234</span></div>
+      <div><span class="t-result">&nbsp;&nbsp;&nbsp;&nbsp; → 1A 2B</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-prompt">你   &gt; </span><span class="t-input">1567</span></div>
+      <div><span class="t-result">&nbsp;&nbsp;&nbsp;&nbsp; → 2A 0B</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-prompt">你   &gt; </span><span class="t-input">1589</span></div>
+      <div><span class="t-result">&nbsp;&nbsp;&nbsp;&nbsp; → 4A 0B</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-win">🎉  恭喜！答案正是 1589，共猜 3 次！</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-prompt">$ </span><span class="t-blink">▌</span></div>
     </div>
   </div>
 </div>
 
-<!-- FEATURES -->
-<div class="wrap">
-  <section class="section">
-    <div class="sec-eyebrow">01 &nbsp; Features</div>
-    <div class="sec-title">核心<em>功能</em></div>
-    <div class="feat-grid">
-      <div class="feat">
-        <div class="feat-num">F-01</div>
-        <div class="feat-icon">>_</div>
-        <div class="feat-name">命令列介面</div>
-        <div class="feat-desc">純 CLI 操作，無外部依賴。互動式提示引導流程，輕量且跨平台。</div>
-      </div>
-      <div class="feat">
-        <div class="feat-num">F-02</div>
-        <div class="feat-icon">╠═</div>
-        <div class="feat-name">可調位數 3–10</div>
-        <div class="feat-desc">自由選擇 <code>3</code> 到 <code>10</code> 位數，改變解謎空間，難度隨位數倍增。</div>
-      </div>
-      <div class="feat">
-        <div class="feat-num">F-03</div>
-        <div class="feat-icon">⇄</div>
-        <div class="feat-name">雙向對戰</div>
-        <div class="feat-desc">「人猜電腦」或「電腦猜人」兩種模式，體驗截然不同的挑戰視角。</div>
-      </div>
-      <div class="feat">
-        <div class="feat-num">F-04</div>
-        <div class="feat-icon">▤</div>
-        <div class="feat-name">猜測歷史</div>
-        <div class="feat-desc">遊戲中即時顯示完整猜測序列與每次 A/B 結果，方便回顧與分析策略。</div>
-      </div>
-      <div class="feat">
-        <div class="feat-num">F-05</div>
-        <div class="feat-icon">⚔</div>
-        <div class="feat-name">難度選擇</div>
-        <div class="feat-desc">多段難度調整猜測上限，適合新手入門到高手極限挑戰。</div>
-      </div>
+<section class="features">
+  <p class="section-label">// 遊戲特色</p>
+  <h2 class="section-title">簡單規則<br>無限深度</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <p class="feature-num">01</p>
+      <span class="feature-icon">⚡</span>
+      <h3 class="feature-name">極速啟動</h3>
+      <p class="feature-desc">原生 C++ 編譯，無任何多餘依賴，毫秒級啟動，在任何終端環境中流暢運行。</p>
     </div>
-  </section>
-</div>
-
-<hr class="full-div">
-
-<!-- MODES -->
-<div class="wrap">
-  <section class="section">
-    <div class="sec-eyebrow">02 &nbsp; Modes</div>
-    <div class="sec-title">遊戲<em>模式</em></div>
-    <div class="modes-grid">
-      <div class="mode-card featured">
-        <div class="mode-label">Mode A</div>
-        <div class="mode-title">人猜電腦</div>
-        <div class="mode-desc">電腦隨機產生不重複數字，玩家輸入猜測並接收 A/B 提示，逐步縮小範圍直到全中。考驗邏輯推理與排除能力。</div>
-      </div>
-      <div class="mode-card">
-        <div class="mode-label">Mode B</div>
-        <div class="mode-title">電腦猜人</div>
-        <div class="mode-desc">玩家在心中設定數字，電腦透過演算法逐步猜測，玩家輸入 A/B 回饋。觀察電腦如何系統性縮減候選範圍。</div>
-      </div>
+    <div class="feature-card">
+      <p class="feature-num">02</p>
+      <span class="feature-icon">🧠</span>
+      <h3 class="feature-name">邏輯推理訓練</h3>
+      <p class="feature-desc">每一筆 A/B 回饋都包含資訊量，鍛鍊邏輯推理與歸納能力，越玩越聰明。</p>
     </div>
-
-    <div class="term" style="margin-top:1.5rem">
-      <div class="term-bar">
-        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
-        <div class="term-filename">mode-B: 電腦猜人</div>
-      </div>
-      <div class="term-body">
-        <span class="t-dim">請在心中設定一組 4 位不重複數字，電腦來猜</span>
-        <span class="t-blank"></span>
-        <span class="t-out">電腦猜：<span style="color:var(--cyan)">0 1 2 3</span>　→ 你輸入 A B：<span style="color:var(--amber)">0 2</span></span>
-        <span class="t-out">電腦猜：<span style="color:var(--cyan)">4 5 1 6</span>　→ 你輸入 A B：<span style="color:var(--amber)">1 1</span></span>
-        <span class="t-out">電腦猜：<span style="color:var(--cyan)">7 5 8 6</span>　→ 你輸入 A B：<span style="color:var(--amber)">0 3</span></span>
-        <span class="t-win">電腦猜：<span style="color:var(--cyan)">8 7 5 6</span>　→ <span style="color:var(--green)">4A 0B</span>　★ 電腦解出！共 4 步</span>
-      </div>
+    <div class="feature-card">
+      <p class="feature-num">03</p>
+      <span class="feature-icon">🎯</span>
+      <h3 class="feature-name">雙人對戰模式</h3>
+      <p class="feature-desc">支援人機對戰與雙人互猜，輪流出題猜題，看誰能以最少次數破解密碼。</p>
     </div>
-  </section>
-</div>
-
-<hr class="full-div">
-
-<!-- DIFFICULTY -->
-<div class="wrap">
-  <section class="section">
-    <div class="sec-eyebrow">03 &nbsp; Difficulty</div>
-    <div class="sec-title">難度<em>系統</em></div>
-    <div class="diff-rows">
-      <div class="diff-row header">
-        <div class="diff-header-text">等級</div>
-        <div class="diff-header-text">說明</div>
-        <div class="diff-header-text">強度</div>
-      </div>
-      <div class="diff-row">
-        <div class="diff-name d-easy">EASY</div>
-        <div class="diff-detail">猜測次數<em>無限制</em>，適合初學者熟悉規則與策略</div>
-        <div class="diff-pips" style="color:var(--green)">
-          <div class="pip on"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
-        </div>
-      </div>
-      <div class="diff-row">
-        <div class="diff-name d-normal">NORMAL</div>
-        <div class="diff-detail">設有<em>猜測上限</em>，需在限定次數內解出答案</div>
-        <div class="diff-pips" style="color:var(--cyan)">
-          <div class="pip on"></div><div class="pip on"></div><div class="pip"></div><div class="pip"></div>
-        </div>
-      </div>
-      <div class="diff-row">
-        <div class="diff-name d-hard">HARD</div>
-        <div class="diff-detail">猜測上限<em>更嚴格</em>，搭配高位數挑戰極限推理</div>
-        <div class="diff-pips" style="color:var(--amber)">
-          <div class="pip on"></div><div class="pip on"></div><div class="pip on"></div><div class="pip"></div>
-        </div>
-      </div>
+    <div class="feature-card">
+      <p class="feature-num">04</p>
+      <span class="feature-icon">📊</span>
+      <h3 class="feature-name">猜題紀錄統計</h3>
+      <p class="feature-desc">完整記錄每局猜測歷程，遊戲結束後顯示最佳成績與平均猜測次數。</p>
     </div>
-    <p style="font-size:0.73rem; color:var(--muted); margin-top:1rem; line-height:1.8;">
-      ※ 難度與位數可自由組合。例如選擇 <code style="color:var(--cyan-dim)">10 位 + HARD</code>，候選空間高達數十億種排列。
-    </p>
-  </section>
-</div>
-
-<hr class="full-div">
-
-<!-- TECH SPEC -->
-<div class="wrap">
-  <section class="section">
-    <div class="sec-eyebrow">04 &nbsp; Spec</div>
-    <div class="sec-title">技術<em>規格</em></div>
-
-    <div class="term" style="margin-bottom:2.5rem">
-      <div class="term-bar">
-        <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
-        <div class="term-filename">tech-spec.txt</div>
-      </div>
-      <div class="term-body" style="padding:0;">
-        <table class="spec-table">
-          <tr><td class="spec-key">語言</td><td class="spec-val"><code>C++17</code></td></tr>
-          <tr><td class="spec-key">編譯器</td><td class="spec-val"><code>g++</code> / <code>clang++</code></td></tr>
-          <tr><td class="spec-key">外部依賴</td><td class="spec-val">無（僅使用 C++ 標準函式庫）</td></tr>
-          <tr><td class="spec-key">平台相容</td><td class="spec-val">Windows · macOS · Linux</td></tr>
-          <tr><td class="spec-key">操作介面</td><td class="spec-val">互動式 CLI（<code>stdin</code> / <code>stdout</code>）</td></tr>
-          <tr><td class="spec-key">位數範圍</td><td class="spec-val"><code>3</code> 至 <code>10</code> 位不重複數字</td></tr>
-          <tr><td class="spec-key">遊戲模式</td><td class="spec-val">人猜電腦 · 電腦猜人</td></tr>
-        </table>
-      </div>
-    </div>
-
-    <div class="sec-eyebrow">快速開始</div>
-    <div class="build-steps">
-      <div class="build-step">
-        <div class="build-num">01</div>
-        <div>
-          <div class="build-label">編譯</div>
-          <div class="build-cmd">g++ <span class="flag">-std=c++17 -O2</span> -o 1a2b main.cpp</div>
-        </div>
-      </div>
-      <div class="build-step">
-        <div class="build-num">02</div>
-        <div>
-          <div class="build-label">執行</div>
-          <div class="build-cmd">./1a2b</div>
-        </div>
-      </div>
-      <div class="build-step">
-        <div class="build-num">03</div>
-        <div>
-          <div class="build-label">依提示選擇位數、難度與模式</div>
-          <div class="build-cmd"><span class="comment">// 互動式選單，無需額外參數</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-</div>
-
-<!-- FOOTER -->
-<footer>
-  <div class="foot-logo">1A2B</div>
-  <div class="foot-meta">
-    C++17 &nbsp;·&nbsp; CLI &nbsp;·&nbsp; Personal Project<br>
-    <span style="color:var(--border2)">────────────────────────</span><br>
-    Built from scratch · No dependencies · Cross-platform
   </div>
-</footer>
+</section>
 
-<script>
-const io = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.style.opacity = '1';
-      e.target.style.transform = 'translateY(0)';
-    }
-  });
-}, { threshold: 0.1 });
+<section class="howto">
+  <p class="section-label">// 遊戲規則</p>
+  <h2 class="section-title" style="margin-bottom:48px;">怎麼玩？</h2>
+  <div>
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>電腦隨機產生答案</h3>
+        <p>系統從 0–9 中選出 4 個不重複的數字組成謎底，位置與順序皆有意義。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>輸入你的猜測</h3>
+        <p>每回合輸入一組 4 位不重複數字，系統會立即給出 A/B 回饋。</p>
+        <div>
+          <span class="step-tag tag-a">A = 數字正確且位置正確</span>
+          <span class="step-tag tag-b">B = 數字正確但位置錯誤</span>
+        </div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>利用回饋縮小範圍</h3>
+        <p>根據每次 A/B 的結果，系統性地推理排除不可能的數字與位置組合。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>4A 即獲勝！</h3>
+        <p>當回饋為 4A0B，代表完全猜中！挑戰自己用最少次數猜出答案。</p>
+      </div>
+    </div>
+  </div>
+</section>
 
-document.querySelectorAll('.section, .term').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(24px)';
-  el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-  io.observe(el);
-});
+<section class="cta-section">
+  <h2 class="cta-title">準備好了嗎？<br><span>開始推理吧。</span></h2>
+  <p class="cta-sub">無需安裝環境，點擊即玩 — 或下載本地版本體驗完整功能</p>
+  <div class="hero-buttons">
+    <a href="https://kaleb-octopus.github.io/1A2B/online-play" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      線上試玩
+    </a>
+    <a href="https://github.com/Kaleb-octopus/1A2B/releases" class="btn btn-secondary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      立即下載
+    </a>
+  </div>
+</section>
 
-const grid = document.querySelector('.dot-grid');
-document.querySelector('.hero')?.addEventListener('mousemove', e => {
-  const x = (e.clientX / innerWidth  - 0.5) * 15;
-  const y = (e.clientY / innerHeight - 0.5) * 15;
-  if (grid) grid.style.backgroundPosition = `${x}px ${y}px`;
-});
-</script>
+<div class="footer-bottom">
+  © 2026 &nbsp;·&nbsp; C++ 自製遊戲 · 1A2B &nbsp;·&nbsp; All rights reserved
+</div>
+
 </body>
 </html>
