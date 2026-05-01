@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1A2B 猜數字遊戲</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e12;
+    --surface: #1a1a22;
+    --surface2: #24242f;
+    --border: #333344;
+    --accent: #00e5a0;
+    --accent2: #ff6b6b;
+    --accent3: #ffd166;
+    --text: #e8e8f0;
+    --muted: #888899;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 1;
+  }
+
+  .logo .a { color: var(--accent); }
+  .logo .b { color: var(--accent2); }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 0.4rem;
+    letter-spacing: 0.05em;
+  }
+
+  .game-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent3);
+  }
+
+  .input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .digit-inputs {
+    display: flex;
+    gap: 0.5rem;
+    flex: 1;
+  }
+
+  .digit-input {
+    flex: 1;
+    height: 56px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 1.6rem;
+    font-weight: 700;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+    -moz-appearance: textfield;
+    caret-color: var(--accent);
+  }
+
+  .digit-input::-webkit-inner-spin-button,
+  .digit-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .digit-input:focus {
+    border-color: var(--accent);
+    background: #1e1e2a;
+  }
+
+  .digit-input.filled {
+    border-color: #444460;
+    color: var(--accent3);
+  }
+
+  .btn-guess {
+    height: 56px;
+    padding: 0 1.25rem;
+    background: var(--accent);
+    color: #0e0e12;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .btn-guess:hover { background: #00ffb3; }
+  .btn-guess:active { transform: scale(0.97); }
+  .btn-guess:disabled { background: #2a2a3a; color: var(--muted); cursor: not-allowed; }
+
+  .error-msg {
+    font-size: 0.8rem;
+    color: var(--accent2);
+    min-height: 1.2em;
+    margin-bottom: 0.5rem;
+    font-family: var(--mono);
+  }
+
+  .history-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    max-height: 280px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .history-header {
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface2);
+  }
+
+  .history-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 0.5rem 0;
+  }
+
+  .history-list::-webkit-scrollbar { width: 4px; }
+  .history-list::-webkit-scrollbar-track { background: transparent; }
+  .history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.45rem 1.25rem;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .round-num {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--muted);
+    min-width: 24px;
+  }
+
+  .guess-num {
+    font-family: var(--mono);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    flex: 1;
+  }
+
+  .result-badge {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+  }
+
+  .badge-a {
+    background: rgba(0,229,160,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.3);
+  }
+
+  .badge-b {
+    background: rgba(255,107,107,0.12);
+    color: var(--accent2);
+    border: 1px solid rgba(255,107,107,0.3);
+  }
+
+  .empty-hint {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* 勝利畫面 */
+  .win-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+
+  .win-overlay.show { display: flex; }
+
+  .win-card {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.7); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .win-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .win-title {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .win-answer {
+    font-family: var(--mono);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--accent3);
+    letter-spacing: 0.2em;
+    margin: 0.75rem 0;
+  }
+
+  .win-msg {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .btn-restart {
+    background: var(--accent);
+    color: #0e0e12;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.75rem 2rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    letter-spacing: 0.05em;
+  }
+
+  .btn-restart:hover { background: #00ffb3; }
+
+  .btn-new-small {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    padding: 0.3rem 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .btn-new-small:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* 規則說明 */
+  .rules {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .rules strong { color: var(--text); }
+  .rules .a-color { color: var(--accent); font-weight: 700; }
+  .rules .b-color { color: var(--accent2); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">
+      <span class="a">1A</span><span class="b">2B</span>
+    </div>
+    <div class="subtitle">猜數字遊戲 — GUESS THE SECRET NUMBER</div>
+  </header>
+
+  <div class="game-panel">
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-label">猜測次數</div>
+        <div class="stat-value" id="guessCount">0</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">最佳紀錄</div>
+        <div class="stat-value" id="bestRecord">—</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">遊戲局數</div>
+        <div class="stat-value" id="gameCount">1</div>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <div class="digit-inputs">
+        <input class="digit-input" id="d0" type="number" min="0" max="9" maxlength="1" placeholder="?" autocomplete="off">
+        <input class="digit-input" id="d1" type="number" min="0" max="9" maxlength="1" placeholder="?" autocomplete="off">
+        <input class="digit-input" id="d2" type="number" min="0" max="9" maxlength="1" placeholder="?" autocomplete="off">
+        <input class="digit-input" id="d3" type="number" min="0" max="9" maxlength="1" placeholder="?" autocomplete="off">
+      </div>
+      <button class="btn-guess" id="btnGuess" onclick="submitGuess()">猜！</button>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <div style="display:flex; justify-content:flex-end;">
+      <button class="btn-new-small" onclick="newGame()">重新開局</button>
+    </div>
+  </div>
+
+  <div class="history-panel">
+    <div class="history-header">
+      <span>猜測記錄</span>
+      <span id="historyCount">共 0 筆</span>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="empty-hint" id="emptyHint">輸入四位數字開始猜吧！</div>
+    </div>
+  </div>
+
+  <div class="rules">
+    電腦隨機產生一組 <strong>4位不重複數字</strong>，猜出答案即獲勝。<br>
+    每次猜測後得到提示：<span class="a-color">A</span> 表示數字正確且位置正確，<span class="b-color">B</span> 表示數字正確但位置錯誤。<br>
+    例如答案 <strong>1234</strong>，猜 <strong>1325</strong> → <span class="a-color">1A</span><span class="b-color">2B</span>
+  </div>
+</div>
+
+<div class="win-overlay" id="winOverlay">
+  <div class="win-card">
+    <div class="win-icon">🎉</div>
+    <div class="win-title">恭喜猜對了！</div>
+    <div class="win-answer" id="winAnswer"></div>
+    <div class="win-msg" id="winMsg"></div>
+    <button class="btn-restart" onclick="newGame()">再玩一局</button>
+  </div>
+</div>
+
+<script>
+let secret = [];
+let history = [];
+let guesses = 0;
+let bestRecord = null;
+let totalGames = 1;
+
+function generateSecret() {
+  const digits = [0,1,2,3,4,5,6,7,8,9];
+  // shuffle
+  for (let i = digits.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [digits[i], digits[j]] = [digits[j], digits[i]];
+  }
+  return digits.slice(0, 4);
+}
+
+function newGame() {
+  secret = generateSecret();
+  history = [];
+  guesses = 0;
+  document.getElementById('guessCount').textContent = '0';
+  document.getElementById('historyList').innerHTML = '<div class="empty-hint" id="emptyHint">輸入四位數字開始猜吧！</div>';
+  document.getElementById('historyCount').textContent = '共 0 筆';
+  document.getElementById('errorMsg').textContent = '';
+  document.getElementById('winOverlay').classList.remove('show');
+  document.getElementById('btnGuess').disabled = false;
+  clearInputs();
+  document.getElementById('d0').focus();
+}
+
+function clearInputs() {
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('d' + i);
+    el.value = '';
+    el.classList.remove('filled');
+  }
+}
+
+function evaluate(guess) {
+  let a = 0, b = 0;
+  for (let i = 0; i < 4; i++) {
+    if (guess[i] === secret[i]) {
+      a++;
+    } else if (secret.includes(guess[i])) {
+      b++;
+    }
+  }
+  return { a, b };
+}
+
+function submitGuess() {
+  const vals = [];
+  for (let i = 0; i < 4; i++) {
+    vals.push(document.getElementById('d' + i).value);
+  }
+
+  // Validate
+  for (let i = 0; i < 4; i++) {
+    if (vals[i] === '' || isNaN(vals[i])) {
+      showError('請輸入完整的 4 位數字！');
+      document.getElementById('d' + i).focus();
+      return;
+    }
+  }
+
+  const digits = vals.map(Number);
+
+  // Check duplicates
+  const set = new Set(digits);
+  if (set.size !== 4) {
+    showError('數字不能重複！');
+    return;
+  }
+
+  clearError();
+  guesses++;
+  document.getElementById('guessCount').textContent = guesses;
+
+  const result = evaluate(digits);
+  addHistory(digits, result, guesses);
+  clearInputs();
+  document.getElementById('d0').focus();
+
+  if (result.a === 4) {
+    // WIN
+    if (bestRecord === null || guesses < bestRecord) {
+      bestRecord = guesses;
+      localStorage.setItem('1a2b_best', bestRecord);
+      document.getElementById('bestRecord').textContent = bestRecord;
+    }
+    document.getElementById('btnGuess').disabled = true;
+    setTimeout(() => showWin(digits, guesses), 300);
+    totalGames++;
+    document.getElementById('gameCount').textContent = totalGames;
+  }
+}
+
+function addHistory(digits, result, round) {
+  const emptyHint = document.getElementById('emptyHint');
+  if (emptyHint) emptyHint.remove();
+
+  const list = document.getElementById('historyList');
+  const item = document.createElement('div');
+  item.className = 'history-item';
+
+  const colorA = result.a > 0 ? 'style="color:var(--accent)"' : '';
+  const colorB = result.b > 0 ? 'style="color:var(--accent2)"' : '';
+
+  item.innerHTML = `
+    <span class="round-num">#${round}</span>
+    <span class="guess-num">${digits.join(' ')}</span>
+    <div class="result-badge">
+      <span class="badge badge-a" ${colorA}>${result.a}A</span>
+      <span class="badge badge-b" ${colorB}>${result.b}B</span>
+    </div>
+  `;
+
+  list.insertBefore(item, list.firstChild);
+  document.getElementById('historyCount').textContent = `共 ${round} 筆`;
+}
+
+function showWin(digits, rounds) {
+  document.getElementById('winAnswer').textContent = digits.join(' ');
+  let msg = `你用了 <strong>${rounds}</strong> 次猜出答案！`;
+  if (rounds <= 4) msg += '🏆 天才！';
+  else if (rounds <= 7) msg += '✨ 表現優秀！';
+  else if (rounds <= 10) msg += '👍 不錯喔！';
+  else msg += '再接再厲！';
+  document.getElementById('winMsg').innerHTML = msg;
+  document.getElementById('winOverlay').classList.add('show');
+}
+
+function showError(msg) {
+  document.getElementById('errorMsg').textContent = msg;
+  setTimeout(clearError, 2500);
+}
+
+function clearError() {
+  document.getElementById('errorMsg').textContent = '';
+}
+
+// Digit input handling: auto-advance, only 1 digit
+document.querySelectorAll('.digit-input').forEach((input, idx) => {
+  input.addEventListener('input', (e) => {
+    let val = e.target.value.replace(/[^0-9]/g, '');
+    if (val.length > 1) val = val.slice(-1);
+    e.target.value = val;
+
+    if (val !== '') {
+      e.target.classList.add('filled');
+      const next = document.getElementById('d' + (idx + 1));
+      if (next) next.focus();
+    } else {
+      e.target.classList.remove('filled');
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && e.target.value === '') {
+      const prev = document.getElementById('d' + (idx - 1));
+      if (prev) {
+        prev.value = '';
+        prev.classList.remove('filled');
+        prev.focus();
+      }
+    }
+    if (e.key === 'Enter') submitGuess();
+  });
+
+  // Prevent non-numeric
+  input.addEventListener('keypress', (e) => {
+    if (!/[0-9]/.test(e.key)) e.preventDefault();
+  });
+});
+
+// Load best record
+const stored = localStorage.getItem('1a2b_best');
+if (stored) {
+  bestRecord = parseInt(stored);
+  document.getElementById('bestRecord').textContent = bestRecord;
+}
+
+// Start
+newGame();
+</script>
+</body>
+</html>
